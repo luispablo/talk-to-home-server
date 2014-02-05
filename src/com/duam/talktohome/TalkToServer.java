@@ -1,7 +1,9 @@
 package com.duam.talktohome;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -13,7 +15,7 @@ public class TalkToServer
 	private static final String OK_MESSAGE = "OK";
 	private static final String AUX_FILE_NAME = "aux_audio_file.3gp";
 	
-	public static void main(String args[]) throws Exception
+	public void start() throws IOException
 	{
 		DatagramSocket serverSocket = new DatagramSocket(PORT);
 
@@ -27,19 +29,27 @@ public class TalkToServer
 			
 			long size = Long.parseLong(new String(receivePacket.getData()).trim());
 			
-			receiveFile(serverSocket, size, id);
-			
+			receiveFile(serverSocket, size, id);			
 			play(id);
+			delete(id);
 		}
 	}
 	
-	private static void play(long id)
+	private void delete(long id)
+	{
+		File file = new File(String.valueOf(id) +"_"+ AUX_FILE_NAME);
+		System.out.println("Borrando... "+ file.getAbsolutePath());
+		file.delete();
+	}
+	
+	private void play(long id)
 	{
 		System.out.println("Playing file");
 		try
 		{
 			Runtime rt = Runtime.getRuntime();
-			rt.exec("ffplay -autoexit -nodisp "+ String.valueOf(id) +"_"+ AUX_FILE_NAME);
+			Process p = rt.exec("ffplay -autoexit -nodisp "+ String.valueOf(id) +"_"+ AUX_FILE_NAME);
+			p.waitFor();
 		}
 		catch (Exception e)
 		{
@@ -47,7 +57,7 @@ public class TalkToServer
 		}
 	}
 	
-	private static void receiveFile(DatagramSocket serverSocket, long fileSize, long id)
+	private void receiveFile(DatagramSocket serverSocket, long fileSize, long id)
 	{
 		System.out.println("Receiving file");
 		
