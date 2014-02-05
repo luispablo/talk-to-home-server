@@ -33,7 +33,7 @@ public class Main
 			});
 			menu.add(itemExit);
 			
-		    TrayIcon trayicon = new TrayIcon(ImageIO.read(Main.class.getResourceAsStream("icono.png")),"I am a description");
+		    TrayIcon trayicon = new TrayIcon(ImageIO.read(Main.class.getResourceAsStream("icono.png")), "Talk 2 Home - SERVER");
 		    trayicon.setImageAutoSize(true);
 		    trayicon.setPopupMenu(menu);
 		    

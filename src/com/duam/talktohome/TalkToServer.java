@@ -44,11 +44,11 @@ public class TalkToServer
 	
 	private void play(long id)
 	{
-		System.out.println("Playing file");
+		System.out.println("Playing file ["+"ffplay -autoexit -loglevel quiet -nodisp "+ String.valueOf(id) +"_"+ AUX_FILE_NAME+"]");
 		try
 		{
 			Runtime rt = Runtime.getRuntime();
-			Process p = rt.exec("ffplay -autoexit -nodisp "+ String.valueOf(id) +"_"+ AUX_FILE_NAME);
+			Process p = rt.exec("ffplay -autoexit -loglevel quiet -nodisp "+ String.valueOf(id) +"_"+ AUX_FILE_NAME);
 			p.waitFor();
 		}
 		catch (Exception e)
