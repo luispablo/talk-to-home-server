@@ -35,6 +35,7 @@ public class TalkToServer
 	
 	private static void play(long id)
 	{
+		System.out.println("Playing file");
 		try
 		{
 			Runtime rt = Runtime.getRuntime();
@@ -48,6 +49,8 @@ public class TalkToServer
 	
 	private static void receiveFile(DatagramSocket serverSocket, long fileSize, long id)
 	{
+		System.out.println("Receiving file");
+		
 		try
 		{
 			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(String.valueOf(id) +"_"+ AUX_FILE_NAME));
@@ -78,6 +81,7 @@ public class TalkToServer
 					bytes = new byte[(remaining < PACKET_SIZE) ? (int) remaining : PACKET_SIZE];
 				}
 			}
+			System.out.println("File received");
 			bos.flush();
 			bos.close();
 		}
