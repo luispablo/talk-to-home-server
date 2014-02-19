@@ -2,6 +2,7 @@ package com.duam.talktohome;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -32,6 +33,63 @@ public class TalkToServer
 			receiveFile(serverSocket, size, id);			
 			play(id);
 			delete(id);
+			sendResponse(serverSocket, receivePacket.getAddress(), receivePacket.getPort());
+		}
+	}
+	
+	private void sendResponse(final DatagramSocket serverSocket, final InetAddress IPAddress, final int port)
+	{
+		Thread th = new Thread()
+		{
+			@Override
+			public void run() 
+			{
+				RecDialog dialog = new RecDialog() 
+				{					
+					@Override
+					protected void onResponseRecorded(File outputFile) 
+					{
+						uploadFile(outputFile, serverSocket, IPAddress, port);
+					}
+				};
+				dialog.show();
+			}			
+		};
+		th.start();
+	}
+	
+	private void uploadFile(File file, DatagramSocket socket, InetAddress IPAddress, int port)
+	{
+		System.out.println("Starting to upload file...");
+		try
+		{
+			String fileLength = String.valueOf(file.length());			
+			byte[] bytes = new byte[PACKET_SIZE];
+			FileInputStream fis = new FileInputStream(file);
+						
+			System.out.println("Sending file size...");	
+			socket.send(new DatagramPacket(fileLength.getBytes(), fileLength.getBytes().length, IPAddress, port));
+			System.out.println("SENT");
+			
+			byte[] response = new byte[256];
+			
+			while (fis.read(bytes) >= 0)
+			{
+				System.out.println("Sending file chunck");
+				DatagramPacket sendPacket = new DatagramPacket(bytes, bytes.length, IPAddress, port);
+				socket.send(sendPacket);
+
+				System.out.println("Waiting for response...");
+				DatagramPacket responsePacket = new DatagramPacket(response, response.length, IPAddress, port);
+				socket.receive(responsePacket);
+			}
+			System.out.println("finished!");
+			
+			fis.close();
+		}
+		catch (IOException ex)
+		{
+			ex.printStackTrace();
 		}
 	}
 	
