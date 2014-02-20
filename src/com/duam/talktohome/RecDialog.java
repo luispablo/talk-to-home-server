@@ -1,10 +1,7 @@
 package com.duam.talktohome;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
@@ -208,7 +205,7 @@ public abstract class RecDialog
 		{
 			Runtime rt = Runtime.getRuntime();
         	System.out.println("Convirtiendo archivo...");
-			Process p = rt.exec("ffmpeg -loglevel quiet -i temp_response.wav -f 3gp -ac 1 -ar 8000 -ab 6.7k temp_response.3gp");
+			Process p = rt.exec("ffmpeg -loglevel quiet -i temp_response.wav -f 3gp -ac 1 -ar 8000 -ab 6.7k temp_response.3gp ");
 			p.waitFor();
 			
 			System.out.println("archivo convertido, borrando wav");

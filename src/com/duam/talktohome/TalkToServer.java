@@ -1,5 +1,10 @@
 package com.duam.talktohome;
 
+import static com.duam.talktohome.ConstantesTalkToHomeServer.AUX_FILE_NAME;
+import static com.duam.talktohome.ConstantesTalkToHomeServer.OK_MESSAGE;
+import static com.duam.talktohome.ConstantesTalkToHomeServer.PORT;
+import static com.duam.talktohome.ConstantesTalkToHomeServer.PACKET_SIZE;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,10 +16,7 @@ import java.net.InetAddress;
 
 public class TalkToServer
 {
-	private static final int PORT = 1616;
-	private static final int PACKET_SIZE = 1024;
-	private static final String OK_MESSAGE = "OK";
-	private static final String AUX_FILE_NAME = "aux_audio_file.3gp";
+	private boolean acceptingNew = true;
 	
 	public void start() throws IOException
 	{
@@ -26,19 +28,24 @@ public class TalkToServer
 
 		for (long id = 0; ; id++)
 		{
-			serverSocket.receive(receivePacket);
-			
-			long size = Long.parseLong(new String(receivePacket.getData()).trim());
-			
-			receiveFile(serverSocket, size, id);			
-			play(id);
-			delete(id);
-			sendResponse(serverSocket, receivePacket.getAddress(), receivePacket.getPort());
+			if (acceptingNew)
+			{
+				serverSocket.receive(receivePacket);
+				
+				long size = Long.parseLong(new String(receivePacket.getData()).trim());
+				
+				receiveFile(serverSocket, size, id);		
+				play(id);
+				delete(id);
+				sendResponse(serverSocket, receivePacket.getAddress(), receivePacket.getPort());				
+			}
 		}
 	}
 	
-	private void sendResponse(final DatagramSocket serverSocket, final InetAddress IPAddress, final int port)
+	private void sendResponse(final DatagramSocket socket, final InetAddress IPAddress, final int port)
 	{
+		acceptingNew = false;
+		
 		Thread th = new Thread()
 		{
 			@Override
@@ -49,7 +56,7 @@ public class TalkToServer
 					@Override
 					protected void onResponseRecorded(File outputFile) 
 					{
-						uploadFile(outputFile, serverSocket, IPAddress, port);
+						uploadFile(outputFile, socket, IPAddress, port);
 					}
 				};
 				dialog.show();
@@ -58,38 +65,41 @@ public class TalkToServer
 		th.start();
 	}
 	
-	private void uploadFile(File file, DatagramSocket socket, InetAddress IPAddress, int port)
+	private void uploadFile(File file, DatagramSocket socket, InetAddress address, int port)
 	{
-		System.out.println("Starting to upload file...");
-		try
-		{
-			String fileLength = String.valueOf(file.length());			
-			byte[] bytes = new byte[PACKET_SIZE];
-			FileInputStream fis = new FileInputStream(file);
-						
-			System.out.println("Sending file size...");	
-			socket.send(new DatagramPacket(fileLength.getBytes(), fileLength.getBytes().length, IPAddress, port));
-			System.out.println("SENT");
+		String fileLength = String.valueOf(file.length());
+		
+		byte[] bytes = new byte[PACKET_SIZE];
+		
+		FileInputStream fis;
+		
+		try 
+		{			
+			fis = new FileInputStream(file);
+			
+			// inform file size
+			socket.send(new DatagramPacket(fileLength.getBytes(), fileLength.getBytes().length, address, port));
+			System.out.println("File length sent to: "+ address.toString() +":"+ port);
 			
 			byte[] response = new byte[256];
 			
 			while (fis.read(bytes) >= 0)
 			{
-				System.out.println("Sending file chunck");
-				DatagramPacket sendPacket = new DatagramPacket(bytes, bytes.length, IPAddress, port);
+				DatagramPacket sendPacket = new DatagramPacket(bytes, bytes.length, address, port);
 				socket.send(sendPacket);
 
-				System.out.println("Waiting for response...");
-				DatagramPacket responsePacket = new DatagramPacket(response, response.length, IPAddress, port);
+				DatagramPacket responsePacket = new DatagramPacket(response, response.length, address, port);
 				socket.receive(responsePacket);
 			}
-			System.out.println("finished!");
+			System.out.println("File content sent");
 			
 			fis.close();
-		}
-		catch (IOException ex)
+			
+			acceptingNew = true;
+		} 
+		catch (IOException e) 
 		{
-			ex.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 	
